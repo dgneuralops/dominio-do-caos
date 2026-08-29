@@ -408,7 +408,7 @@
   </main>
 
   <script>
-    // ── Generate static noise texture on canvas ──
+    // ── Noise texture ──
     (function () {
       const SIZE = 256;
       const c = document.createElement('canvas');
@@ -425,30 +425,44 @@
       document.getElementById('noise-layer').style.backgroundImage = `url(${c.toDataURL()})`;
     })();
 
-    // ── Form logic ──
-    const TARGET  = 'https://chat.whatsapp.com/EL4PlLDOrMU47EkL0f4tGc?mode=gi_t';
-    const form    = document.getElementById('entry-form');
-    const fName   = document.getElementById('field-name');
-    const fEmail  = document.getElementById('field-email');
-    const fPhone  = document.getElementById('field-phone');
-    const iName   = document.getElementById('nome');
-    const iEmail  = document.getElementById('email');
-    const iPhone  = document.getElementById('telefone');
+    // ── Config ──
+    // Após publicar o Apps Script como Web App, cole a URL aqui:
+    const APPS_SCRIPT_URL = 'COLE_A_URL_DO_APPS_SCRIPT_AQUI';
+    const TARGET = 'https://chat.whatsapp.com/EL4PlLDOrMU47EkL0f4tGc?mode=gi_t';
+
+    // ── Form refs ──
+    const form   = document.getElementById('entry-form');
+    const fName  = document.getElementById('field-name');
+    const fEmail = document.getElementById('field-email');
+    const fPhone = document.getElementById('field-phone');
+    const iName  = document.getElementById('nome');
+    const iEmail = document.getElementById('email');
+    const iPhone = document.getElementById('telefone');
+    const btn    = form.querySelector('.cta');
 
     function setError(field, has) { field.classList.toggle('has-error', has); }
     function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
     function validPhone(v) { return v.replace(/\D/g, '').length >= 10; }
 
+    // Máscara de telefone
     iPhone.addEventListener('input', () => {
       let v = iPhone.value.replace(/\D/g, '').slice(0, 11);
-      if (v.length > 10)      iPhone.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
-      else if (v.length > 6)  iPhone.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`;
-      else if (v.length > 2)  iPhone.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
-      else if (v.length > 0)  iPhone.value = `(${v}`;
+      if (v.length > 10)     iPhone.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+      else if (v.length > 6) iPhone.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`;
+      else if (v.length > 2) iPhone.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
+      else if (v.length > 0) iPhone.value = `(${v}`;
     });
 
-    form.addEventListener('submit', e => {
+    // Limpa erros ao digitar
+    [iName, iEmail, iPhone].forEach((input, i) => {
+      const field = [fName, fEmail, fPhone][i];
+      input.addEventListener('input', () => setError(field, false));
+    });
+
+    // ── Submit ──
+    form.addEventListener('submit', async e => {
       e.preventDefault();
+
       const nameOk  = iName.value.trim().length >= 2;
       const emailOk = validEmail(iEmail.value);
       const phoneOk = validPhone(iPhone.value);
@@ -458,18 +472,37 @@
       if (!nameOk)  { iName.focus();  return; }
       if (!emailOk) { iEmail.focus(); return; }
       if (!phoneOk) { iPhone.focus(); return; }
-      try {
-        localStorage.setItem('dc_lead', JSON.stringify({
-          name: iName.value.trim(), email: iEmail.value.trim(),
-          phone: iPhone.value.trim(), ts: Date.now()
-        }));
-      } catch (_) {}
-      window.location.href = TARGET;
-    });
 
-    [iName, iEmail, iPhone].forEach((input, i) => {
-      const field = [fName, fEmail, fPhone][i];
-      input.addEventListener('input', () => setError(field, false));
+      const payload = {
+        name:  iName.value.trim(),
+        email: iEmail.value.trim(),
+        phone: iPhone.value.trim()
+      };
+
+      // Estado de loading
+      btn.textContent = 'ENVIANDO...';
+      btn.disabled = true;
+
+      try {
+        // Se a URL do Apps Script foi configurada, envia os dados
+        if (APPS_SCRIPT_URL && !APPS_SCRIPT_URL.startsWith('COLE')) {
+          await fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            // Apps Script não aceita application/json cross-origin sem CORS manual,
+            // então enviamos como text/plain (o script faz JSON.parse normalmente)
+            headers: { 'Content-Type': 'text/plain' }
+          });
+        }
+        // Fallback: salva localmente de qualquer forma
+        try { localStorage.setItem('dc_lead', JSON.stringify({ ...payload, ts: Date.now() })); } catch (_) {}
+      } catch (_) {
+        // Não bloqueia o redirect se a rede falhar
+      }
+
+      // Feedback visual antes do redirect
+      btn.textContent = 'ABRINDO GRUPO...';
+      setTimeout(() => { window.location.href = TARGET; }, 800);
     });
   </script>
 </body>
