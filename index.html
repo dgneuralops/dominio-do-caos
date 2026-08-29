@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOMÍNIO DO CAOS</title>
+  <meta name="description" content="Você está prestes a entrar no grupo onde operações reais acontecem — com erros, acertos e o processo sem filtro.">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap">
+
+  <style>
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #130000;
+      --input-bg:  #1a0101;
+      --red:       #CC1111;
+      --red-hover: #a80e0e;
+      --red-dim:   #6b0000;
+      --text:      #f5f1ea;
+      --muted:     #8a7e78;
+      --divider:   #2e2420;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ── Noise overlay (canvas-generated, applied via JS) ── */
+    #noise-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      opacity: 0.055;
+      background-repeat: repeat;
+      background-size: 256px 256px;
+    }
+
+    /* ── Scanlines overlay ── */
+    #scanline-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 0, 0, 0.10) 3px,
+        rgba(0, 0, 0, 0.10) 4px
+      );
+    }
+
+    /* ── Background typographic texture ── */
+    .bg-text {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-word {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 21vw;
+      line-height: 0.88;
+      color: var(--red);
+      opacity: 0.04;
+      white-space: nowrap;
+      letter-spacing: -0.02em;
+      user-select: none;
+    }
+
+    /* ── Page wrapper ── */
+    .page {
+      position: relative;
+      z-index: 5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 64px;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 56px;
+    }
+
+    .wordmark {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 22px;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .badge {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--red);
+      border: 1px solid var(--red-dim);
+      padding: 4px 10px;
+      border-radius: 2px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 40px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      display: block;
+      width: 24px;
+      height: 1px;
+      background: var(--red);
+      flex-shrink: 0;
+    }
+
+    .headline {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: clamp(64px, 18vw, 108px);
+      line-height: 0.9;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      text-wrap: balance;
+      margin-bottom: 28px;
+    }
+
+    .headline em {
+      font-style: normal;
+      color: var(--red);
+    }
+
+    .lead {
+      font-size: 16px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--muted);
+      max-width: 42ch;
+    }
+
+    /* ── Benefits ── */
+    .benefits {
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 44px;
+      display: flex;
+      flex-direction: column;
+      border-top: 1px solid var(--divider);
+    }
+
+    .benefit {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--divider);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+
+    .benefit-label {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.04em;
+      color: var(--text);
+      line-height: 1.1;
+    }
+
+    .benefit-desc {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Form ── */
+    .form-wrap {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--divider);
+      padding: 36px 32px 40px;
+      margin-bottom: 32px;
+    }
+
+    .form-heading {
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 28px;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .form-sub {
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--muted);
+      margin-bottom: 32px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 28px;
+    }
+
+    .field label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .field input {
+      background: var(--input-bg);
+      border: none;
+      border-bottom: 1px solid var(--divider);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      padding: 10px 0;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+      border-radius: 0;
+      -webkit-appearance: none;
+    }
+
+    .field input::placeholder { color: var(--red-dim); opacity: 1; }
+    .field input:focus { border-bottom-color: var(--red); }
+    .field input:focus-visible { outline: none; border-bottom-color: var(--red); }
+
+    .cta {
+      display: block;
+      width: 100%;
+      background: var(--red);
+      color: var(--text);
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 20px;
+      letter-spacing: 0.12em;
+      text-align: center;
+      padding: 18px 24px;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+      margin-top: 4px;
+      -webkit-appearance: none;
+    }
+
+    .cta:hover { background: var(--red-hover); }
+    .cta:active { transform: scale(0.99); }
+    .cta:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+    .field-error {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: 6px;
+      display: none;
+    }
+
+    .field.has-error input { border-bottom-color: var(--red); }
+    .field.has-error .field-error { display: block; }
+
+    /* ── Footer ── */
+    .footer {
+      width: 100%;
+      max-width: 480px;
+      text-align: center;
+    }
+
+    .footer p {
+      font-size: 11px;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .footer strong { color: var(--text); font-weight: 500; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; animation: none !important; }
+    }
+
+    @media (max-width: 520px) {
+      .form-wrap { padding: 28px 20px 32px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Noise layer (filled by JS) -->
+  <div id="noise-layer" aria-hidden="true"></div>
+
+  <!-- Scanlines layer -->
+  <div id="scanline-layer" aria-hidden="true"></div>
+
+  <!-- Atmospheric background typography -->
+  <div class="bg-text" aria-hidden="true">
+    <div class="bg-word">DOMÍNIO</div>
+    <div class="bg-word">DO CAOS</div>
+  </div>
+
+  <main class="page">
+
+    <nav class="topbar" aria-label="Topo">
+      <span class="wordmark">NOOMA</span>
+      <span class="badge">Grupo Exclusivo</span>
+    </nav>
+
+    <header class="hero">
+      <p class="eyebrow">Você está prestes a entrar</p>
+      <h1 class="headline">DOMÍNIO<br>DO <em>CAOS</em></h1>
+      <p class="lead">
+        Não é uma comunidade de motivação. É onde operações reais acontecem — com erros, acertos e o processo sem filtro.
+      </p>
+    </header>
+
+    <section class="benefits" aria-label="O que você vai acompanhar">
+      <div class="benefit">
+        <div class="benefit-label">OPERAÇÕES REAIS</div>
+        <div class="benefit-desc">Acompanhe decisões de verdade, não estudos de caso polidos depois do fato.</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-label">ENCURTE O CAMINHO</div>
+        <div class="benefit-desc">Aplique o que realmente funciona. O que não funciona também vira dado — só que quem paga o preço não é você.</div>
+      </div>
+      <div class="benefit">
+        <div class="benefit-label">ERROS VIRAM HISTÓRICO</div>
+        <div class="benefit-desc">Cada falha documentada vale mais do que qualquer curso. Você tem acesso ao acervo completo.</div>
+      </div>
+    </section>
+
+    <div class="form-wrap" role="region" aria-label="Formulário de entrada">
+      <div class="form-heading">QUERO ENTRAR</div>
+      <p class="form-sub">Preencha para liberar seu acesso direto ao grupo.</p>
+
+      <form id="entry-form" novalidate>
+        <div class="field" id="field-name">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" placeholder="Seu nome completo" autocomplete="name" required>
+          <span class="field-error" role="alert">Informe seu nome.</span>
+        </div>
+
+        <div class="field" id="field-email">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" name="email" placeholder="seu@email.com" autocomplete="email" required>
+          <span class="field-error" role="alert">Informe um e-mail válido.</span>
+        </div>
+
+        <div class="field" id="field-phone">
+          <label for="telefone">Telefone</label>
+          <input type="tel" id="telefone" name="telefone" placeholder="(11) 99999-9999" autocomplete="tel" required>
+          <span class="field-error" role="alert">Informe seu telefone.</span>
+        </div>
+
+        <button type="submit" class="cta">ENTRAR NO GRUPO AGORA</button>
+      </form>
+    </div>
+
+    <footer class="footer">
+      <p>
+        Ao entrar, você confirma que quer acompanhar <strong>DOMÍNIO DO CAOS</strong> — o grupo onde a NeuralOps documenta sua operação em tempo real.<br>
+        Sem spam. Sem promessa vazia.
+      </p>
+    </footer>
+
+  </main>
+
+  <script>
+    // ── Generate static noise texture on canvas ──
+    (function () {
+      const SIZE = 256;
+      const c = document.createElement('canvas');
+      c.width = c.height = SIZE;
+      const ctx = c.getContext('2d');
+      const img = ctx.createImageData(SIZE, SIZE);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 255 | 0;
+        d[i] = d[i + 1] = d[i + 2] = v;
+        d[i + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      document.getElementById('noise-layer').style.backgroundImage = `url(${c.toDataURL()})`;
+    })();
+
+    // ── Form logic ──
+    const TARGET  = 'https://chat.whatsapp.com/EL4PlLDOrMU47EkL0f4tGc?mode=gi_t';
+    const form    = document.getElementById('entry-form');
+    const fName   = document.getElementById('field-name');
+    const fEmail  = document.getElementById('field-email');
+    const fPhone  = document.getElementById('field-phone');
+    const iName   = document.getElementById('nome');
+    const iEmail  = document.getElementById('email');
+    const iPhone  = document.getElementById('telefone');
+
+    function setError(field, has) { field.classList.toggle('has-error', has); }
+    function validEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()); }
+    function validPhone(v) { return v.replace(/\D/g, '').length >= 10; }
+
+    iPhone.addEventListener('input', () => {
+      let v = iPhone.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 10)      iPhone.value = `(${v.slice(0,2)}) ${v.slice(2,7)}-${v.slice(7)}`;
+      else if (v.length > 6)  iPhone.value = `(${v.slice(0,2)}) ${v.slice(2,6)}-${v.slice(6)}`;
+      else if (v.length > 2)  iPhone.value = `(${v.slice(0,2)}) ${v.slice(2)}`;
+      else if (v.length > 0)  iPhone.value = `(${v}`;
+    });
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const nameOk  = iName.value.trim().length >= 2;
+      const emailOk = validEmail(iEmail.value);
+      const phoneOk = validPhone(iPhone.value);
+      setError(fName,  !nameOk);
+      setError(fEmail, !emailOk);
+      setError(fPhone, !phoneOk);
+      if (!nameOk)  { iName.focus();  return; }
+      if (!emailOk) { iEmail.focus(); return; }
+      if (!phoneOk) { iPhone.focus(); return; }
+      try {
+        localStorage.setItem('dc_lead', JSON.stringify({
+          name: iName.value.trim(), email: iEmail.value.trim(),
+          phone: iPhone.value.trim(), ts: Date.now()
+        }));
+      } catch (_) {}
+      window.location.href = TARGET;
+    });
+
+    [iName, iEmail, iPhone].forEach((input, i) => {
+      const field = [fName, fEmail, fPhone][i];
+      input.addEventListener('input', () => setError(field, false));
+    });
+  </script>
+</body>
+</html>
