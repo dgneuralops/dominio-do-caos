@@ -74,7 +74,7 @@ function notifyEvolution(p, name, email, phone, ts) {
     `*Telefone:* ${phone}\n` +
     `*Horário:* ${ts}`;
 
-  UrlFetchApp.fetch(`${p.EVO_URL}/message/sendText/${p.EVO_INSTANCE}`, {
+  UrlFetchApp.fetch(`${p.EVO_URL}/message/sendText/${encodeURIComponent(p.EVO_INSTANCE)}`, {
     method: 'post',
     contentType: 'application/json',
     headers: { apikey: p.EVO_APIKEY },
