@@ -7,6 +7,24 @@
   <meta name="description" content="Você está prestes a entrar no grupo onde operações reais acontecem — com erros, acertos e o processo sem filtro.">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap">
 
+  <!-- Meta Pixel -->
+  <script>
+  !function(f,b,e,v,n,t,s)
+  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+  n.queue=[];t=b.createElement(e);t.async=!0;
+  t.src=v;s=b.getElementsByTagName(e)[0];
+  s.parentNode.insertBefore(t,s)}(window, document,'script',
+  'https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', '1430872258938076');
+  fbq('track', 'PageView');
+  </script>
+  <noscript><img height="1" width="1" style="display:none"
+  src="https://www.facebook.com/tr?id=1430872258938076&ev=PageView&noscript=1"
+  /></noscript>
+  <!-- End Meta Pixel -->
+
   <style>
     :root {
       --bg:        #0d0d0d;
@@ -500,9 +518,26 @@
         // Não bloqueia o redirect se a rede falhar
       }
 
+      // Dispara evento Lead no Meta Pixel com Advanced Matching
+      if (typeof fbq === 'function') {
+        // Reinit com dados do usuário para melhorar atribuição (Advanced Matching)
+        fbq('init', '1430872258938076', {
+          em: payload.email.toLowerCase().trim(),
+          ph: payload.phone.replace(/\D/g, ''),
+          fn: payload.name.split(' ')[0].toLowerCase(),
+          ln: (payload.name.split(' ').slice(1).join(' ') || '').toLowerCase()
+        });
+        fbq('track', 'Lead', {
+          content_name: 'DOMÍNIO DO CAOS',
+          content_category: 'WhatsApp Group',
+          currency: 'BRL',
+          value: 0
+        });
+      }
+
       // Feedback visual antes do redirect
       btn.textContent = 'ABRINDO GRUPO...';
-      setTimeout(() => { window.location.href = TARGET; }, 800);
+      setTimeout(() => { window.location.href = TARGET; }, 1200);
     });
   </script>
 </body>
