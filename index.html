@@ -7,6 +7,16 @@
   <meta name="description" content="Você está prestes a entrar no grupo onde operações reais acontecem — com erros, acertos e o processo sem filtro.">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap">
 
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-DS2P5TB5XC"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-DS2P5TB5XC');
+  </script>
+  <!-- End Google Analytics -->
+
   <!-- Meta Pixel -->
   <script>
   !function(f,b,e,v,n,t,s)
@@ -516,6 +526,16 @@
         try { localStorage.setItem('dc_lead', JSON.stringify({ ...payload, ts: Date.now() })); } catch (_) {}
       } catch (_) {
         // Não bloqueia o redirect se a rede falhar
+      }
+
+      // Evento de conversão no Google Analytics 4
+      if (typeof gtag === 'function') {
+        gtag('event', 'generate_lead', {
+          event_category: 'form',
+          event_label: 'DOMÍNIO DO CAOS',
+          value: 0,
+          currency: 'BRL'
+        });
       }
 
       // Dispara evento Lead no Meta Pixel com Advanced Matching
